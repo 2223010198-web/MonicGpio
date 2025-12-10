@@ -475,9 +475,9 @@ if data and segundos_atras < TIEMPO_LIMITE_DESCONEXION:
     # NUEVO: KPI para MQ-2
     estado_mq2 = "🔥 GAS!" if g_mq2 == 0 else "✅ Limpio"
     kpi_gas_mq2.metric(
-        "🔥 MQ-2 (Gas)",
+        "♨️ Humo",
         estado_mq2,
-        "Digital",
+        "MQ-2",
         delta_color="inverse" if g_mq2 == 0 else "normal"
     )
     
@@ -635,6 +635,7 @@ else:
 time.sleep(1)
 
 st.rerun()
+
 
 
 
