@@ -204,21 +204,21 @@ st.markdown("""
         text-align: center;
         padding: 1rem 0;
     }
-    .audio-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 15px;
-        color: white;
-        margin: 1rem 0;
+    /* CLASES NUEVAS PARA EL UMBRAL DE COLORES */
+    .umbral-verde {
+        background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px;
+        text-align: center; border: 2px solid #c3e6cb;
     }
-    .alert-card {
-        background: #ff5252;
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
+    .umbral-rojo {
+        background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px;
+        text-align: center; border: 2px solid #f5c6cb;
+        animation: pulse 1.5s infinite;
     }
-    div[data-testid="stMetricValue"] { font-size: 2rem; }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -633,4 +633,5 @@ else:
     alert_banner.info("⏳ Esperando primera conexión con Raspberry Pi...")
 
 time.sleep(1)
+
 st.rerun()
