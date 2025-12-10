@@ -492,8 +492,8 @@ if data and segundos_atras < TIEMPO_LIMITE_DESCONEXION:
     kpi_umbral.metric(
         "🎚️ Umbral Audio",
         f"{umbral_audio_actual:.2f}",
-        "normal",
-        delta_color="inverse" if umbral_audio_actual > 0.25 else "Dinámico"
+        "Dinámico",
+        delta_color="inverse" if umbral_audio_actual > 0.25 else "normal"
     )
     
     kpi_riesgo.metric(
@@ -635,4 +635,5 @@ else:
 time.sleep(1)
 
 st.rerun()
+
 
