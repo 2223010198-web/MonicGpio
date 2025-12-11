@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-🌲 DASHBOARD FORESTAL INTEGRADO (DISEÑO GOOGLE MATERIAL DESIGN)
+🌲 DASHBOARD FORESTAL INTEGRADO (MODO OSCURO NATIVO)
 Monitor Central: Sensores Ambientales + Detección de Disparos + Audio en Vivo
 """
 import streamlit as st
@@ -31,369 +31,22 @@ st.set_page_config(
 )
 
 # ==========================================
-# 🎨 ESTILOS CSS MEJORADOS - GOOGLE MATERIAL DESIGN
+# 🎨 ESTILOS CSS MÍNIMOS
 # ==========================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-    
-    /* Reset Global */
-    .main { font-family: 'Inter', sans-serif; background: #f8f9fa; }
-    
-    /* Hero Header */
-    .hero-container {
-        background: linear-gradient(135deg, #0d7d3f 0%, #1a5f3a 50%, #0a3d26 100%);
-        padding: 2rem 2rem 3rem 2rem;
-        border-radius: 24px;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px rgba(13, 125, 63, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    .hero-container::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .hero-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        color: white;
-        text-align: center;
-        margin: 0;
-        text-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        letter-spacing: -1px;
-    }
-    .hero-subtitle {
-        text-align: center;
-        color: rgba(255,255,255,0.9);
-        font-size: 1.2rem;
-        font-weight: 300;
-        margin-top: 0.5rem;
-    }
-    .hero-status {
-        text-align: center;
-        margin-top: 1.5rem;
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-    }
-    .hero-badge {
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        padding: 0.5rem 1.5rem;
-        border-radius: 50px;
-        color: white;
-        font-weight: 600;
-        font-size: 0.9rem;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    /* Sistema de Alertas Crítico */
-    .alert-critical {
-        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 12px 48px rgba(220, 38, 38, 0.4);
-        animation: pulse-alert 2s infinite;
-        border: 3px solid #fef2f2;
-    }
+    /* Animación para alertas críticas */
     @keyframes pulse-alert {
-        0%, 100% { box-shadow: 0 12px 48px rgba(220, 38, 38, 0.4); }
-        50% { box-shadow: 0 16px 64px rgba(220, 38, 38, 0.6); }
-    }
-    .alert-critical h2 {
-        color: white;
-        font-size: 2rem;
-        font-weight: 800;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .alert-critical p {
-        color: rgba(255,255,255,0.95);
-        font-size: 1.1rem;
-        margin-top: 0.5rem;
-    }
-    
-    .alert-warning {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
-        border: 2px solid #fef3c7;
-    }
-    .alert-warning h3 {
-        color: white;
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0;
-    }
-    
-    /* Cards Modernos con Glassmorphism */
-    .modern-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0,0,0,0.05);
-        height: 100%;
-    }
-    .modern-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-    }
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    .card-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .card-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #111827;
-        line-height: 1;
-        margin: 0.5rem 0;
-    }
-    .card-unit {
-        font-size: 1rem;
-        color: #9ca3af;
-        font-weight: 500;
-    }
-    .card-trend {
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        display: inline-block;
-    }
-    .trend-good { background: #d1fae5; color: #059669; }
-    .trend-warning { background: #fef3c7; color: #d97706; }
-    .trend-critical { background: #fee2e2; color: #dc2626; }
-    
-    /* Sensor Status Cards */
-    .sensor-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-    .sensor-status-card {
-        background: white;
-        border-radius: 16px;
-        padding: 1.25rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        border-left: 4px solid #e5e7eb;
-        transition: all 0.3s ease;
-    }
-    .sensor-status-card.online { border-left-color: #10b981; }
-    .sensor-status-card.offline { border-left-color: #ef4444; }
-    .sensor-status-card:hover {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    .sensor-name {
-        font-weight: 700;
-        font-size: 1rem;
-        color: #111827;
-        margin-bottom: 0.25rem;
-    }
-    .sensor-model {
-        font-size: 0.8rem;
-        color: #9ca3af;
-        margin-bottom: 0.75rem;
-    }
-    .sensor-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.35rem 0.85rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    .sensor-indicator.online {
-        background: #d1fae5;
-        color: #059669;
-    }
-    .sensor-indicator.offline {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-    
-    /* Timeline de Eventos */
-    .timeline-container {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    }
-    .timeline-item {
-        display: flex;
-        gap: 1rem;
-        padding: 1rem 0;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    .timeline-item:last-child { border-bottom: none; }
-    .timeline-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        flex-shrink: 0;
-    }
-    .timeline-icon.critical { background: #fee2e2; }
-    .timeline-icon.warning { background: #fef3c7; }
-    .timeline-icon.info { background: #dbeafe; }
-    .timeline-content h4 {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #111827;
-    }
-    .timeline-content p {
-        margin: 0.25rem 0 0 0;
-        font-size: 0.85rem;
-        color: #6b7280;
-    }
-    
-    /* Panel de IA */
-    .ia-panel {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        color: white;
-        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
-    }
-    .ia-panel h3 {
-        margin: 0 0 1rem 0;
-        font-size: 1.3rem;
-        font-weight: 700;
-    }
-    .ia-status {
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    .ia-confidence {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.75rem;
-    }
-    .confidence-bar {
-        flex: 1;
-        height: 8px;
-        background: rgba(255,255,255,0.3);
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 0 1rem;
-    }
-    .confidence-fill {
-        height: 100%;
-        background: white;
-        border-radius: 4px;
-        transition: width 0.5s ease;
-    }
-    
-    /* Audio Player Moderno */
-    .audio-container {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    }
-    .audio-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    .audio-status {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: #f3f4f6;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-    .audio-live {
-        width: 8px;
-        height: 8px;
-        background: #ef4444;
-        border-radius: 50%;
-        animation: pulse-live 2s infinite;
-    }
-    @keyframes pulse-live {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
+        50% { opacity: 0.7; }
+    }
+    .pulse-alert {
+        animation: pulse-alert 2s infinite;
     }
     
-    /* Métricas con Iconos */
-    .metric-icon-card {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .metric-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        flex-shrink: 0;
-    }
-    .metric-icon.temp { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
-    .metric-icon.humidity { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-    .metric-icon.gas { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-    .metric-icon.distance { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
-    
-    /* Sección de Título */
-    .section-header {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #111827;
-        margin: 2rem 0 1rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    .section-divider {
-        height: 2px;
-        background: linear-gradient(90deg, #e5e7eb 0%, transparent 100%);
-        margin: 2rem 0;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .hero-title { font-size: 2rem; }
-        .card-value { font-size: 2rem; }
+    /* Mejora legibilidad de tablas */
+    .stDataFrame {
+        font-size: 0.9rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -505,7 +158,6 @@ def iniciar_sistema_central():
 
             elif topic == TOPIC_ALERTAS:
                 estado.alertas_disparo.appendleft(payload)
-                # Agregar a timeline
                 estado.eventos_timeline.appendleft({
                     'tipo': 'critical',
                     'icono': '🔫',
@@ -644,7 +296,7 @@ if 'audio_local_activo' not in st.session_state:
 
 with st.sidebar:
     st.markdown("### ⚙️ Centro de Control")
-    st.markdown("---")
+    st.divider()
     
     # Estado del Sistema
     st.markdown("#### 📡 Conexión")
@@ -652,7 +304,7 @@ with st.sidebar:
     col1.metric("Broker", "HiveMQ", "🟢 Online")
     col2.metric("Latencia", f"{int((time.time() - estado_compartido.ultima_recepcion)*1000)}ms")
     
-    st.markdown("---")
+    st.divider()
     st.markdown("#### 🎧 Audio Táctico")
     
     escuchar = st.toggle("📈 Transmisión en Vivo", value=st.session_state.audio_local_activo)
@@ -665,38 +317,38 @@ with st.sidebar:
         else:
             st.toast("🔇 Audio desactivado", icon="ℹ️")
     
-    st.markdown("---")
+    st.divider()
     st.markdown("#### 📊 Estadísticas")
     if estado_compartido.ultimo_dato:
         st.metric("Muestras IA", len(estado_compartido.detector_ia.historial))
         st.metric("Eventos", len(estado_compartido.eventos_timeline))
     
-    st.markdown("---")
+    st.divider()
     st.caption("🌲 Forest Monitor Pro v2.0")
-    st.caption("Powered by Google Design")
+    st.caption("Powered by Streamlit Dark Mode")
 
 # ==========================================
 # 🖥️ MAIN DASHBOARD
 # ==========================================
 
-# Hero Header
 data = estado_compartido.ultimo_dato
 tiempo_transcurrido = time.time() - estado_compartido.ultima_recepcion
 
 if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
-    hw = data.get('hardware', {})
     
-    st.markdown(f"""
-    <div class="hero-container">
-        <h1 class="hero-title">🌲 Monitor Forestal Pro</h1>
-        <p class="hero-subtitle">Sistema Inteligente de Vigilancia Ambiental y Seguridad</p>
-        <div class="hero-status">
-            <div class="hero-badge">🟢 SISTEMA OPERATIVO</div>
-            <div class="hero-badge">⚡ {int(tiempo_transcurrido*1000)}ms latencia</div>
-            <div class="hero-badge">💻 {hw.get('modelo_rpi', 'RPi')} @ {hw.get('cpu_temp', 0)}°C</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ==========================================
+    # 📊 HEADER
+    # ==========================================
+    st.title("🌲 Monitor Forestal Pro")
+    st.caption("Sistema Inteligente de Vigilancia Ambiental y Seguridad")
+    
+    hw = data.get('hardware', {})
+    col_h1, col_h2, col_h3 = st.columns(3)
+    col_h1.metric("Estado", "OPERATIVO", "🟢 Online")
+    col_h2.metric("Latencia", f"{int(tiempo_transcurrido*1000)}ms")
+    col_h3.metric("Hardware", f"{hw.get('modelo_rpi', 'RPi')}", f"{hw.get('cpu_temp', 0)}°C")
+    
+    st.divider()
     
     # Extraer datos
     t = data.get('temp', 0)
@@ -718,211 +370,167 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     
     # Alerta Crítica de Incendio
     if riesgo['score'] >= 60 or g == 0:
-        st.markdown(f"""
-        <div class="alert-critical">
-            <h2>🔥 ALERTA CRÍTICA DE INCENDIO</h2>
-            <p>Nivel de riesgo: <strong>{riesgo['score']}/100</strong> | {riesgo['mensaje']}</p>
-            <p>Factores detectados: {' • '.join(riesgo['factores'])}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.error(f"""
+        ### 🔥 ALERTA CRÍTICA DE INCENDIO
+        
+        **Nivel de riesgo:** {riesgo['score']}/100 | {riesgo['mensaje']}
+        
+        **Factores detectados:**
+        {chr(10).join('- ' + f for f in riesgo['factores'])}
+        """, icon="🚨")
     
     # Alerta de Disparo
     if estado_compartido.alertas_disparo:
         last_shot = estado_compartido.alertas_disparo[0]
         ts_shot = datetime.fromtimestamp(last_shot['timestamp']).strftime('%H:%M:%S')
-        st.markdown(f"""
-        <div class="alert-critical">
-            <h2>🔫 DISPARO DETECTADO</h2>
-            <p>Hora: <strong>{ts_shot}</strong> | Confianza IA: <strong>{last_shot['probabilidad']*100:.1f}%</strong></p>
-            <p>⚠️ Posible actividad de caza furtiva en la zona</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.error(f"""
+        ### 🔫 DISPARO DETECTADO
+        
+        **Hora:** {ts_shot} | **Confianza IA:** {last_shot['probabilidad']*100:.1f}%
+        
+        ⚠️ Posible actividad de caza furtiva en la zona
+        """, icon="🔫")
         st.audio(base64.b64decode(last_shot['audio']), format='audio/wav')
     
     # Alerta de Proximidad Crítica
     if 0 < d < 50:
-        st.markdown(f"""
-        <div class="alert-warning">
-            <h3>🚶 PROXIMIDAD CRÍTICA DETECTADA</h3>
-            <p>Objeto/Persona a <strong>{d} cm</strong> del sensor ultrasonido</p>
-            <p>Posible intruso o cazador furtivo en el área protegida</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.warning(f"""
+        ### 🚶 PROXIMIDAD CRÍTICA DETECTADA
+        
+        Objeto/Persona a **{d} cm** del sensor ultrasónico
+        
+        Posible intruso o cazador furtivo en el área protegida
+        """, icon="⚠️")
     
     # Advertencia General
     elif riesgo['score'] >= 30:
-        st.markdown(f"""
-        <div class="alert-warning">
-            <h3>⚠️ ADVERTENCIA - Nivel {riesgo['nivel']}</h3>
-            <p>{riesgo['mensaje']} | Score: {riesgo['score']}/100</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.warning(f"""
+        ### ⚠️ ADVERTENCIA - Nivel {riesgo['nivel']}
+        
+        {riesgo['mensaje']} | Score: {riesgo['score']}/100
+        """, icon="⚠️")
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.divider()
     
     # ==========================================
-    # 📊 MÉTRICAS PRINCIPALES CON ICONOS
+    # 📊 MÉTRICAS PRINCIPALES
     # ==========================================
-    st.markdown('<h2 class="section-header">📊 Métricas Ambientales</h2>', unsafe_allow_html=True)
+    st.subheader("📊 Métricas Ambientales")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        trend_t = "trend-critical" if t > 35 else ("trend-warning" if t > 30 else "trend-good")
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="metric-icon-card">
-                <div class="metric-icon temp">🌡️</div>
-                <div>
-                    <div class="card-title">TEMPERATURA</div>
-                    <div class="card-value">{t}<span class="card-unit">°C</span></div>
-                    <span class="card-trend {trend_t}">
-                        {'🔥 CRÍTICO' if t > 35 else ('⚠️ Alto' if t > 30 else '✅ Normal')}
-                    </span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        delta_t = "🔥 CRÍTICO" if t > 35 else ("⚠️ Alto" if t > 30 else "✅ Normal")
+        col1.metric(
+            label="🌡️ TEMPERATURA",
+            value=f"{t}°C",
+            delta=delta_t,
+            delta_color="inverse" if t > 35 else ("off" if t > 30 else "normal")
+        )
     
     with col2:
-        trend_h = "trend-critical" if h < 20 else ("trend-warning" if h < 40 else "trend-good")
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="metric-icon-card">
-                <div class="metric-icon humidity">💧</div>
-                <div>
-                    <div class="card-title">HUMEDAD</div>
-                    <div class="card-value">{h}<span class="card-unit">%</span></div>
-                    <span class="card-trend {trend_h}">
-                        {'⚠️ Muy Seco' if h < 20 else ('💧 Bajo' if h < 40 else '✅ Óptimo')}
-                    </span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        delta_h = "⚠️ Muy Seco" if h < 20 else ("💧 Bajo" if h < 40 else "✅ Óptimo")
+        col2.metric(
+            label="💧 HUMEDAD",
+            value=f"{h}%",
+            delta=delta_h,
+            delta_color="inverse" if h < 20 else ("off" if h < 40 else "normal")
+        )
     
     with col3:
         gas_status = "DETECTADO" if g == 0 else "Normal"
-        trend_g = "trend-critical" if g == 0 else "trend-good"
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="metric-icon-card">
-                <div class="metric-icon gas">♨️</div>
-                <div>
-                    <div class="card-title">GAS/HUMO</div>
-                    <div class="card-value" style="font-size: 1.8rem;">{gas_status}</div>
-                    <span class="card-trend {trend_g}">
-                        {'🔥 ALERTA' if g == 0 else '✅ Despejado'}
-                    </span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        delta_g = "🔥 ALERTA" if g == 0 else "✅ Despejado"
+        col3.metric(
+            label="♨️ GAS/HUMO",
+            value=gas_status,
+            delta=delta_g,
+            delta_color="inverse" if g == 0 else "normal"
+        )
     
     with col4:
         dist_status = f"{d} cm" if d > 0 else "Sin obj."
-        trend_d = "trend-critical" if 0 < d < 50 else ("trend-warning" if 50 <= d < 100 else "trend-good")
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="metric-icon-card">
-                <div class="metric-icon distance">📏</div>
-                <div>
-                    <div class="card-title">DISTANCIA</div>
-                    <div class="card-value" style="font-size: 1.8rem;">{dist_status}</div>
-                    <span class="card-trend {trend_d}">
-                        {'🚨 CRÍTICO' if 0 < d < 50 else ('👁️ Cerca' if 50 <= d < 100 else '✅ Lejano')}
-                    </span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('<div style="margin: 1.5rem 0;"></div>', unsafe_allow_html=True)
+        delta_d = "🚨 CRÍTICO" if 0 < d < 50 else ("👁️ Cerca" if 50 <= d < 100 else "✅ Lejano")
+        col4.metric(
+            label="📏 DISTANCIA",
+            value=dist_status,
+            delta=delta_d,
+            delta_color="inverse" if 0 < d < 50 else ("off" if 50 <= d < 100 else "normal")
+        )
     
     # Métricas Secundarias
     col5, col6, col7 = st.columns(3)
     
     with col5:
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="card-title">🎚️ UMBRAL AUDIO IA</div>
-            <div class="card-value">{umbral:.2f}</div>
-            <span class="card-trend {'trend-critical' if umbral <= 0.25 else 'trend-good'}">
-                {'🚨 MÁXIMA ALERTA' if umbral <= 0.25 else '🛡️ VIGILANCIA'}
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        delta_u = "🚨 MÁXIMA ALERTA" if umbral <= 0.25 else "🛡️ VIGILANCIA"
+        col5.metric(
+            label="🎚️ UMBRAL AUDIO IA",
+            value=f"{umbral:.2f}",
+            delta=delta_u,
+            delta_color="inverse" if umbral <= 0.25 else "normal"
+        )
     
     with col6:
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="card-title">⚡ ÍNDICE DE RIESGO</div>
-            <div class="card-value">{riesgo['score']}<span class="card-unit">/100</span></div>
-            <span class="card-trend trend-{'critical' if riesgo['score'] >= 60 else ('warning' if riesgo['score'] >= 30 else 'good')}">
-                {riesgo['icono']} {riesgo['nivel']}
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        col6.metric(
+            label="⚡ ÍNDICE DE RIESGO",
+            value=f"{riesgo['score']}/100",
+            delta=f"{riesgo['icono']} {riesgo['nivel']}",
+            delta_color="inverse" if riesgo['score'] >= 60 else ("off" if riesgo['score'] >= 30 else "normal")
+        )
     
     with col7:
         mov_status = "DETECTADO" if mov else "Sin actividad"
-        st.markdown(f"""
-        <div class="modern-card">
-            <div class="card-title">🎯 MOVIMIENTO</div>
-            <div class="card-value" style="font-size: 1.6rem;">{mov_status}</div>
-            <span class="card-trend {'trend-warning' if mov else 'trend-good'}">
-                {'⚡ ACTIVO' if mov else '✅ TRANQUILO'}
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        delta_m = "⚡ ACTIVO" if mov else "✅ TRANQUILO"
+        col7.metric(
+            label="🎯 MOVIMIENTO",
+            value=mov_status,
+            delta=delta_m,
+            delta_color="off" if mov else "normal"
+        )
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.divider()
     
     # ==========================================
     # 📡 ESTADO DE SENSORES
     # ==========================================
-    st.markdown('<h2 class="section-header">📡 Estado de Dispositivos</h2>', unsafe_allow_html=True)
+    st.subheader("📡 Estado de Dispositivos")
     
+    sensores_data = []
     sensores_info = [
-        ("Sensor Climático", "DHT11 Digital", sensores.get('dht11', 'OFFLINE')),
-        ("Sensor de Proximidad", "HC-SR04 Ultrasónico", sensores.get('ultrasonido', 'OFFLINE')),
-        ("Detector Gas/Humo", "MQ-2 Analógico", sensores.get('mq2', 'OFFLINE')),
-        ("Micrófono Táctico", "INMP441 I2S Digital", sensores.get('mic_inmp441', 'OFFLINE'))
+        ("🌡️ Sensor Climático", "DHT11 Digital", sensores.get('dht11', 'OFFLINE')),
+        ("📏 Sensor de Proximidad", "HC-SR04 Ultrasónico", sensores.get('ultrasonido', 'OFFLINE')),
+        ("♨️ Detector Gas/Humo", "MQ-2 Analógico", sensores.get('mq2', 'OFFLINE')),
+        ("🎤 Micrófono Táctico", "INMP441 I2S Digital", sensores.get('mic_inmp441', 'OFFLINE'))
     ]
     
-    cols = st.columns(4)
-    for idx, (nombre, modelo, estado) in enumerate(sensores_info):
-        with cols[idx]:
-            conectado = False
-            if isinstance(estado, dict):
-                conectado = estado.get('conectado', False)
-                if not conectado and "ONLINE" in str(estado): conectado = True
-            else:
-                conectado = (str(estado) == "ONLINE")
-            
-            status_class = "online" if conectado else "offline"
-            status_text = "ONLINE" if conectado else "OFFLINE"
-            icon = "🟢" if conectado else "🔴"
-            
-            st.markdown(f"""
-            <div class="sensor-status-card {status_class}">
-                <div class="sensor-name">{icon} {nombre}</div>
-                <div class="sensor-model">{modelo}</div>
-                <span class="sensor-indicator {status_class}">{status_text}</span>
-            </div>
-            """, unsafe_allow_html=True)
+    for nombre, modelo, estado in sensores_info:
+        conectado = False
+        if isinstance(estado, dict):
+            conectado = estado.get('conectado', False)
+            if not conectado and "ONLINE" in str(estado): 
+                conectado = True
+        else:
+            conectado = (str(estado) == "ONLINE")
+        
+        status_text = "🟢 ONLINE" if conectado else "🔴 OFFLINE"
+        sensores_data.append({
+            "Sensor": nombre,
+            "Modelo": modelo,
+            "Estado": status_text
+        })
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    df_sensores = pd.DataFrame(sensores_data)
+    st.dataframe(df_sensores, use_container_width=True, hide_index=True)
+    
+    st.divider()
     
     # ==========================================
     # 📈 GRÁFICOS Y ANÁLISIS
     # ==========================================
-    st.markdown('<h2 class="section-header">📈 Análisis Temporal</h2>', unsafe_allow_html=True)
+    st.subheader("📈 Análisis Temporal")
     
     col_graf1, col_graf2 = st.columns(2)
     
     with col_graf1:
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
         st.markdown("#### 🌡️ Temperatura y Humedad")
         if len(estado_compartido.hist_temp) > 0:
             df_clima = pd.DataFrame({
@@ -932,28 +540,21 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
             st.area_chart(df_clima, height=250, color=["#f97316", "#06b6d4"])
         else:
             st.info("Recopilando datos...")
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with col_graf2:
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
         st.markdown("#### 📏 Distancia Detectada")
         if len(estado_compartido.hist_distancia) > 0:
             df_dist = pd.DataFrame({
                 "Distancia (cm)": list(estado_compartido.hist_distancia)
             })
             st.line_chart(df_dist, height=250, color="#ec4899")
-            # Línea de referencia crítica
             st.caption("🚨 Zona crítica: < 50cm | ⚠️ Zona advertencia: 50-100cm")
         else:
             st.info("Recopilando datos...")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div style="margin: 1rem 0;"></div>', unsafe_allow_html=True)
     
     col_graf3, col_graf4 = st.columns(2)
     
     with col_graf3:
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
         st.markdown("#### ♨️ Nivel de Gas/Humo")
         if len(estado_compartido.hist_gas) > 0:
             df_gas = pd.DataFrame({
@@ -963,10 +564,8 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
             st.caption("🔥 0 = Gas/Humo detectado | 1 = Aire limpio")
         else:
             st.info("Recopilando datos...")
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with col_graf4:
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
         st.markdown("#### ⚡ Evolución del Riesgo")
         if len(estado_compartido.hist_riesgo) > 0:
             df_riesgo = pd.DataFrame({
@@ -976,102 +575,92 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
             st.caption("🟢 0-29: Seguro | 🟡 30-59: Precaución | 🔴 60-100: Crítico")
         else:
             st.info("Recopilando datos...")
-        st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.divider()
     
     # ==========================================
     # 🎧 AUDIO Y EVENTOS
     # ==========================================
-    st.markdown('<h2 class="section-header">🎧 Monitoreo en Tiempo Real</h2>', unsafe_allow_html=True)
+    st.subheader("🎧 Monitoreo en Tiempo Real")
     
     col_audio, col_timeline = st.columns([1, 1])
     
     with col_audio:
-        st.markdown('<div class="audio-container">', unsafe_allow_html=True)
-        st.markdown("""
-        <div class="audio-header">
-            <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700;">🎧 Audio Táctico</h3>
-            <div class="audio-status">
-                <div class="audio-live"></div>
-                EN VIVO
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("#### 🎧 Audio Táctico")
         
         if st.session_state.audio_local_activo:
             audio_data = estado_compartido.ultimo_audio_monitor
             if audio_data:
                 ts = datetime.fromtimestamp(audio_data['timestamp']).strftime('%H:%M:%S')
-                st.caption(f"📡 Stream activo • {ts}")
+                st.success(f"🔴 EN VIVO • Stream activo • {ts}", icon="📡")
                 st.audio(base64.b64decode(audio_data['audio']), format='audio/wav', autoplay=True)
             else:
                 st.warning("⏳ Esperando transmisión...")
         else:
             st.info("🔇 Audio desactivado\n\nActiva el toggle en el panel lateral para escuchar")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with col_timeline:
-        st.markdown('<div class="timeline-container">', unsafe_allow_html=True)
-        st.markdown('<h3 style="margin: 0 0 1rem 0; font-size: 1.2rem; font-weight: 700;">📋 Timeline de Eventos</h3>', unsafe_allow_html=True)
+        st.markdown("#### 📋 Timeline de Eventos")
         
         if estado_compartido.eventos_timeline:
+            eventos_data = []
             for evento in list(estado_compartido.eventos_timeline)[:5]:
                 ts_ev = datetime.fromtimestamp(evento['timestamp']).strftime('%H:%M:%S')
-                icon_class = evento['tipo']
-                st.markdown(f"""
-                <div class="timeline-item">
-                    <div class="timeline-icon {icon_class}">{evento['icono']}</div>
-                    <div class="timeline-content">
-                        <h4>{evento['titulo']}</h4>
-                        <p>{evento['descripcion']} • {ts_ev}</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                eventos_data.append({
+                    "Hora": ts_ev,
+                    "Evento": f"{evento['icono']} {evento['titulo']}",
+                    "Descripción": evento['descripcion']
+                })
+            
+            df_eventos = pd.DataFrame(eventos_data)
+            st.dataframe(df_eventos, use_container_width=True, hide_index=True)
         else:
-            st.info("✅ Sin eventos recientes\n\nEl sistema está monitoreando...")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.success("✅ Sin eventos recientes\n\nEl sistema está monitoreando...")
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.divider()
     
     # ==========================================
     # 🤖 PANEL DE INTELIGENCIA ARTIFICIAL
     # ==========================================
-    st.markdown('<h2 class="section-header">🤖 Análisis de Inteligencia Artificial</h2>', unsafe_allow_html=True)
+    st.subheader("🤖 Análisis de Inteligencia Artificial")
     
     col_ia1, col_ia2 = st.columns([2, 1])
     
     with col_ia1:
-        st.markdown(f"""
-        <div class="ia-panel">
-            <h3>🧠 Motor de Detección de Anomalías</h3>
-            <div class="ia-status">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 600;">{prediccion['mensaje']}</span>
-                    <span style="font-size: 1.5rem;">{'⚠️' if prediccion['es_anomalia'] else '✅'}</span>
-                </div>
-                <div class="ia-confidence">
-                    <span style="font-weight: 600;">Confianza:</span>
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: {prediccion['confianza']}%;"></div>
-                    </div>
-                    <span style="font-weight: 700; font-size: 1.2rem;">{prediccion['confianza']}%</span>
-                </div>
-            </div>
-            <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">
-                    <strong>Estado del Modelo:</strong> {'🟢 Entrenado' if estado_compartido.detector_ia.entrenado else '🟡 Calibrando'}<br>
-                    <strong>Muestras:</strong> {len(estado_compartido.detector_ia.historial)}/50<br>
-                    <strong>Algoritmo:</strong> Isolation Forest (Scikit-learn)
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        if prediccion['es_anomalia']:
+            st.error(f"""
+            ### 🧠 Motor de Detección de Anomalías
+            
+            **Estado:** {prediccion['mensaje']} {'⚠️' if prediccion['es_anomalia'] else '✅'}
+            
+            **Confianza:** {prediccion['confianza']}%
+            
+            ---
+            
+            **Estado del Modelo:** {'🟢 Entrenado' if estado_compartido.detector_ia.entrenado else '🟡 Calibrando'}
+            
+            **Muestras:** {len(estado_compartido.detector_ia.historial)}/50
+            
+            **Algoritmo:** Isolation Forest (Scikit-learn)
+            """, icon="⚠️")
+        else:
+            st.success(f"""
+            ### 🧠 Motor de Detección de Anomalías
+            
+            **Estado:** {prediccion['mensaje']} {'⚠️' if prediccion['es_anomalia'] else '✅'}
+            
+            **Confianza:** {prediccion['confianza']}%
+            
+            ---
+            
+            **Estado del Modelo:** {'🟢 Entrenado' if estado_compartido.detector_ia.entrenado else '🟡 Calibrando'}
+            
+            **Muestras:** {len(estado_compartido.detector_ia.historial)}/50
+            
+            **Algoritmo:** Isolation Forest (Scikit-learn)
+            """, icon="✅")
     
     with col_ia2:
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
         st.markdown("#### 🎯 Factores de Riesgo")
         if riesgo['factores']:
             for factor in riesgo['factores']:
@@ -1079,25 +668,21 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
         else:
             st.success("✅ Sin factores de riesgo")
         
-        st.markdown("---")
+        st.divider()
         st.markdown("#### 📊 Resumen")
         st.metric("Score Total", f"{riesgo['score']}/100")
         st.metric("Nivel", riesgo['nivel'])
-        st.markdown('</div>', unsafe_allow_html=True)
 
 else:
     # ==========================================
     # 🔴 SISTEMA OFFLINE
     # ==========================================
-    st.markdown(f"""
-    <div class="hero-container" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);">
-        <h1 class="hero-title">🔴 Sistema Desconectado</h1>
-        <p class="hero-subtitle">No se reciben datos de la Raspberry Pi</p>
-        <div class="hero-status">
-            <div class="hero-badge">⏱️ Última conexión: hace {int(tiempo_transcurrido)}s</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🔴 Sistema Desconectado")
+    st.caption("No se reciben datos de la Raspberry Pi")
+    
+    col_off1, col_off2 = st.columns(2)
+    col_off1.metric("Estado", "OFFLINE", "🔴")
+    col_off2.metric("Última conexión", f"hace {int(tiempo_transcurrido)}s")
     
     st.error("""
     ### ⚠️ Diagnóstico de Conexión
