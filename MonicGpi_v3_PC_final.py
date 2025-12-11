@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-🌲 DASHBOARD FORESTAL INTEGRADO CON IA (MULTI-USUARIO)
+🌲 DASHBOARD FORESTAL INTEGRADO (MULTI-USUARIO & V6 COMPATIBLE)
 Monitor Central: Sensores Ambientales + Detección de Disparos + Audio en Vivo
-Compatible con Raspberry Pi v6 + HiveMQ
 """
 import streamlit as st
 import paho.mqtt.client as mqtt
@@ -39,14 +38,14 @@ PORT = 8883
 USER = "jore-223010198"
 PASS = "2223010198$Jore"
 
-# Tópicos
+# Tópicos (Coincidentes con RPi v6)
 TOPIC_SENSORES = "bosque/sensores"
 TOPIC_ALERTAS = "seguridad/alertas"
 TOPIC_MONITOR = "seguridad/monitor"
 TOPIC_COMANDOS = "seguridad/comandos"
 TOPIC_DISPOSITIVO = "bosque/dispositivo"
 
-TIEMPO_LIMITE_DESCONEXION = 10 # Segundos para considerar offline
+TIEMPO_LIMITE_DESCONEXION = 10 
 
 # ==========================================
 # 🧠 CLASE INTELIGENCIA ARTIFICIAL
@@ -62,24 +61,29 @@ class DetectorAnomalias:
     def agregar_muestra(self, temp, hum, gas):
         self.historial.append([temp, hum, gas])
         if len(self.historial) >= self.min_muestras and not self.entrenado:
-            datos = np.array(self.historial)
-            self.modelo.fit(self.scaler.fit_transform(datos))
-            self.entrenado = True
+            try:
+                datos = np.array(self.historial)
+                self.modelo.fit(self.scaler.fit_transform(datos))
+                self.entrenado = True
+            except:
+                pass # Evitar crash si los datos son constantes
     
     def predecir(self, temp, hum, gas):
         if not self.entrenado:
             return {"es_anomalia": False, "confianza": 0, "estado": "ENTRENANDO", 
                     "mensaje": f"Recolectando datos ({len(self.historial)}/{self.min_muestras})"}
-        
-        muestra_escalada = self.scaler.transform([[temp, hum, gas]])
-        pred = self.modelo.predict(muestra_escalada)[0]
-        score = self.modelo.decision_function(muestra_escalada)[0]
-        return {
-            "es_anomalia": pred == -1,
-            "confianza": min(100, max(0, int((1 - score) * 50 + 50))),
-            "estado": "ALERTA" if pred == -1 else "NORMAL",
-            "mensaje": "⚠️ Patrón inusual" if pred == -1 else "✅ Valores normales"
-        }
+        try:
+            muestra_escalada = self.scaler.transform([[temp, hum, gas]])
+            pred = self.modelo.predict(muestra_escalada)[0]
+            score = self.modelo.decision_function(muestra_escalada)[0]
+            return {
+                "es_anomalia": pred == -1,
+                "confianza": min(100, max(0, int((1 - score) * 50 + 50))),
+                "estado": "ALERTA" if pred == -1 else "NORMAL",
+                "mensaje": "⚠️ Patrón inusual" if pred == -1 else "✅ Valores normales"
+            }
+        except:
+             return {"es_anomalia": False, "confianza": 0, "estado": "ERROR", "mensaje": "Error IA"}
     
     def get_estadisticas(self):
         if not self.historial: return None
@@ -94,23 +98,23 @@ class DetectorAnomalias:
 # 💾 GESTOR DE ESTADO COMPARTIDO (SINGLETON)
 # ==========================================
 class EstadoCompartido:
-    """Clase para almacenar datos compartidos entre todos los usuarios del dashboard"""
+    """Memoria compartida para todos los usuarios conectados"""
     def __init__(self):
         self.ultimo_dato = None
         self.ultima_recepcion = 0
         self.ultimo_audio_monitor = None
         self.info_dispositivo = {}
         
-        # Historiales compartidos para gráficos
+        # Historiales
         self.hist_temp = deque(maxlen=50)
         self.hist_hum = deque(maxlen=50)
         self.hist_gas = deque(maxlen=50)
         self.hist_dist = deque(maxlen=50)
         
-        # Alertas recientes (FIFO)
+        # Alertas
         self.alertas_disparo = deque(maxlen=5)
         
-        # Instancia única del detector IA
+        # IA Compartida
         self.detector_ia = DetectorAnomalias()
 
 # ==========================================
@@ -118,7 +122,7 @@ class EstadoCompartido:
 # ==========================================
 @st.cache_resource
 def iniciar_sistema_central():
-    """Inicia MQTT y Estado Compartido UNA SOLA VEZ"""
+    """Inicia MQTT una sola vez y lo comparte"""
     estado = EstadoCompartido()
     
     def on_message(client, userdata, msg):
@@ -130,13 +134,11 @@ def iniciar_sistema_central():
                 estado.ultimo_dato = payload
                 estado.ultima_recepcion = time.time()
                 
-                # Guardar en historiales
                 estado.hist_temp.append(payload.get('temp', 0))
                 estado.hist_hum.append(payload.get('hum', 0))
                 estado.hist_gas.append(payload.get('gas_mq2', 0))
                 estado.hist_dist.append(payload.get('distancia', 0))
                 
-                # Entrenar IA
                 estado.detector_ia.agregar_muestra(
                     payload.get('temp', 0), 
                     payload.get('hum', 0), 
@@ -144,8 +146,7 @@ def iniciar_sistema_central():
                 )
 
             elif topic == TOPIC_ALERTAS:
-                # Insertar al inicio (nueva alerta)
-                estado.alertas_disparo.appendleft(payload)
+                estado.alertas_disparo.appendleft(payload) # Insertar al principio
             
             elif topic == TOPIC_MONITOR:
                 estado.ultimo_audio_monitor = payload
@@ -156,7 +157,7 @@ def iniciar_sistema_central():
         except Exception as e:
             print(f"Error procesando mensaje: {e}")
 
-    # Configuración Cliente MQTT
+    # Cliente MQTT
     client_id = f"Dashboard_Master_{datetime.now().strftime('%H%M%S')}"
     client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id)
     client.username_pw_set(USER, PASS)
@@ -165,10 +166,9 @@ def iniciar_sistema_central():
     
     try:
         client.connect(BROKER, PORT, 60)
-        # Suscribirse a todos los tópicos relevantes
         client.subscribe([
             (TOPIC_SENSORES, 0),
-            (TOPIC_ALERTAS, 2),  # QoS 2 para alertas (importante)
+            (TOPIC_ALERTAS, 2),
             (TOPIC_MONITOR, 0),
             (TOPIC_DISPOSITIVO, 0)
         ])
@@ -178,7 +178,7 @@ def iniciar_sistema_central():
 
     return estado, client
 
-# Iniciar recursos (o recuperar caché)
+# Obtener instancia compartida
 estado_compartido, cliente_mqtt = iniciar_sistema_central()
 
 # ==========================================
@@ -188,29 +188,35 @@ def analizar_riesgo(temp, gas_mq2, hum, distancia, prediccion_ia, movimiento):
     score = 0
     factores = []
     
+    # 1. Temperatura
     if temp > 45: score += 40; factores.append("🔥 Temperatura crítica")
     elif temp > 35: score += 20; factores.append("⚠️ Temperatura elevada")
     
-    # Gas MQ-2 (0 es detectado en digital)
+    # 2. Gas (0 = Detectado en digital)
     if gas_mq2 == 0: 
         score += 45
         factores.append("🔥 GAS/HUMO DETECTADO")
     
+    # 3. Humedad
     if hum < 20: score += 15; factores.append("💧 Aire muy seco")
     
+    # 4. IA
     if prediccion_ia["es_anomalia"]: 
         score += 20
         factores.append("🤖 Patrón anómalo (IA)")
     
+    # 5. Movimiento
     mensaje_extra = ""
     if movimiento:
         score += 10
         factores.append("⚡ Movimiento detectado")
         mensaje_extra = " | ⚡ ALERTA MOVIMIENTO"
     
+    # 6. Proximidad
     if 0 < distancia < 50:
         factores.append(f"🚶 Proximidad: {distancia}cm")
     
+    # Evaluación Final
     if score >= 60:
         return {"nivel": "CRÍTICO", "color": "inverse", "icono": "🔥", "mensaje": f"¡PELIGRO!{mensaje_extra}", "score": score, "factores": factores}
     elif score >= 30:
@@ -219,7 +225,7 @@ def analizar_riesgo(temp, gas_mq2, hum, distancia, prediccion_ia, movimiento):
         return {"nivel": "NORMAL", "color": "normal", "icono": "✅", "mensaje": f"Seguro{mensaje_extra}", "score": score, "factores": factores}
 
 # ==========================================
-# 🎨 INTERFAZ GRÁFICA (CSS)
+# 🎨 DISEÑO E INTERFAZ
 # ==========================================
 st.markdown("""
 <style>
@@ -230,14 +236,16 @@ st.markdown("""
         text-align: center; padding: 1rem 0;
     }
     div[data-testid="stMetricValue"] { font-size: 1.8rem; }
+    .audio-card { background-color: #f0f2f6; padding: 15px; border-radius: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<h1 class="main-header">🌲 Monitor Central de Seguridad Forestal</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#666;">Sistema Integrado: Sensores Ambientales + Detección de Disparos con IA</p>', unsafe_allow_html=True)
 
-# Control de Sesión Local (Toggle Micrófono)
-if 'escuchando' not in st.session_state:
-    st.session_state.escuchando = False
+# Toggle local para controlar el comando
+if 'mic_activo' not in st.session_state:
+    st.session_state.mic_activo = False
 
 # ==========================================
 # 🎛️ SIDEBAR
@@ -248,43 +256,40 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 🎤 Audio Remoto")
-    activar_mic = st.toggle("🔴 Activar Escucha", value=st.session_state.escuchando)
     
-    if activar_mic != st.session_state.escuchando:
-        st.session_state.escuchando = activar_mic
-        # Enviar comando al dispositivo
-        cmd = "ON" if activar_mic else "OFF"
+    # Control de Audio
+    toggle_mic = st.toggle("🔴 Activar Escucha", value=st.session_state.mic_activo)
+    
+    if toggle_mic != st.session_state.mic_activo:
+        st.session_state.mic_activo = toggle_mic
+        cmd = "ON" if toggle_mic else "OFF"
         cliente_mqtt.publish(TOPIC_COMANDOS, cmd)
-        
-    st.caption("Al activar, la Raspberry enviará audio en tiempo real.")
+        if toggle_mic:
+            st.toast("🎤 Solicitando audio...", icon="📡")
+        else:
+            st.toast("🔇 Audio desactivado", icon="🛑")
+            
+    st.caption("Al activar, todos los usuarios conectados podrán escuchar el audio.")
 
 # ==========================================
-# 🔄 PROCESAMIENTO DE DATOS
+# 🔄 PROCESAMIENTO
 # ==========================================
 data = estado_compartido.ultimo_dato
 tiempo_transcurrido = time.time() - estado_compartido.ultima_recepcion
 
-# Columnas principales de Layout
+# Layout
 col_estado, col_dispositivo = st.columns([1, 2])
 estado_con = col_estado.empty()
 info_hw = col_dispositivo.empty()
 
 st.markdown("---")
 
-# KPIs
 col1, col2, col3, col4, col5, col6 = st.columns(6)
-kpi_t = col1.empty()
-kpi_h = col2.empty()
-kpi_g = col3.empty()
-kpi_d = col4.empty()
-kpi_u = col5.empty()
-kpi_r = col6.empty()
+kpi_t, kpi_h, kpi_g = col1.empty(), col2.empty(), col3.empty()
+kpi_d, kpi_u, kpi_r = col4.empty(), col5.empty(), col6.empty()
 
-# Alertas
 alert_banner = st.empty()
 col_audio_live, col_audio_alertas = st.columns([1, 1])
-audio_live_cont = col_audio_live.empty()
-audio_alert_cont = col_audio_alertas.empty()
 
 st.markdown("---")
 col_extra1, col_extra2 = st.columns([1, 2])
@@ -292,10 +297,10 @@ tabla_sensores = col_extra1.empty()
 graficos = col_extra2.empty()
 
 # ==========================================
-# 🖥️ LOGICA DE VISUALIZACIÓN
+# 🖥️ VISUALIZACIÓN
 # ==========================================
 if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
-    # 1. Extracción de datos
+    # 1. Parsear datos (Compatible v6)
     t = data.get('temp', 0)
     h = data.get('hum', 0)
     g = data.get('gas_mq2', 1)
@@ -303,123 +308,120 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     mov = data.get('movimiento_detectado', False)
     umbral = data.get('umbral_audio_actual', 0.50)
     
-    hw = data.get('hardware', {})
-    sensores = data.get('estado_sensores', {})
+    sensores_dict = data.get('estado_sensores', {})
+    hw_info = data.get('hardware', {})
     
     # 2. Análisis
     prediccion = estado_compartido.detector_ia.predecir(t, h, g)
     riesgo = analizar_riesgo(t, g, h, d, prediccion, mov)
     
-    # 3. Estado Conexión
+    # 3. Estado
     estado_con.success(f"🟢 **ONLINE** | Ping: {int(tiempo_transcurrido)}s")
     
+    # 4. Info Hardware
     with info_hw.container():
         c1, c2, c3 = st.columns(3)
-        c1.markdown(f"**🤖 Modelo:** {hw.get('modelo_rpi', 'RPi 3')}")
-        c2.markdown(f"**🌡️ CPU:** {hw.get('cpu_temp', 0)}°C")
-        c3.markdown(f"**📡 Host:** {hw.get('hostname', 'Forestal-1')}")
-
-    # 4. KPIs
+        c1.markdown(f"**💻 Modelo:** {hw_info.get('modelo_rpi', 'RPi')}")
+        c2.markdown(f"**🌡️ CPU:** {hw_info.get('cpu_temp', 0)}°C")
+        c3.markdown(f"**📡 Host:** {hw_info.get('hostname', 'Forestal')}")
+    
+    # 5. KPIs
     kpi_t.metric("🌡️ Temp", f"{t}°C", delta_color="inverse" if t > 35 else "normal")
     kpi_h.metric("💧 Humedad", f"{h}%")
     
-    gas_txt = "🔥 GAS!" if g == 0 else "✅ Aire Puro"
-    kpi_g.metric("♨️ Calidad Aire", gas_txt, delta_color="inverse" if g == 0 else "normal")
+    gas_label = "🔥 GAS!" if g == 0 else "✅ Aire Puro"
+    kpi_g.metric("♨️ Gas MQ-2", gas_label, delta_color="inverse" if g == 0 else "normal")
     
     kpi_d.metric("📏 Distancia", f"{d}cm", delta_color="inverse" if 0 < d < 50 else "normal")
     
-    # Lógica de colores solicitada para Umbral
-    # 0.50 -> Verde (Normal) | 0.25 -> Rojo (Sensible/Alerta)
+    # Lógica de Color Umbral (0.25 = Rojo/Alerta, 0.50 = Verde/Normal)
     color_umbral = "inverse" if umbral <= 0.25 else "normal"
-    txt_umbral = "🚨 ALERTA" if umbral <= 0.25 else "🛡️ VIGILANCIA"
-    kpi_u.metric("🎚️ Umbral IA", f"{umbral:.2f}", txt_umbral, delta_color=color_umbral)
+    label_umbral = "🚨 ALERTA" if umbral <= 0.25 else "🛡️ VIGILANCIA"
+    kpi_u.metric("🎚️ Umbral IA", f"{umbral:.2f}", label_umbral, delta_color=color_umbral)
     
-    kpi_r.metric("⚡ Nivel Riesgo", f"{riesgo['score']}%", riesgo['nivel'], delta_color=riesgo['color'])
-
-    # 5. Banner Alerta
+    kpi_r.metric("⚡ Riesgo", f"{riesgo['score']}%", riesgo['nivel'], delta_color=riesgo['color'])
+    
+    # 6. Alertas Banner
     if riesgo['nivel'] == "CRÍTICO":
         alert_banner.error(f"## {riesgo['icono']} {riesgo['mensaje']}")
     elif riesgo['nivel'] == "ADVERTENCIA":
         alert_banner.warning(f"## {riesgo['icono']} {riesgo['mensaje']}")
     else:
         alert_banner.success(f"## {riesgo['icono']} {riesgo['mensaje']}")
-
-    # 6. Tabla Sensores (Sincronizada con v6)
+        
+    # 7. Tabla Sensores (Mapeo v6)
     with tabla_sensores.container():
         st.markdown("#### 📡 Estado de Sensores")
         
-        # Mapeo de claves enviadas por RPi v6
-        estado_dht = sensores.get('dht11', 'UNKNOWN')
-        estado_ultra = sensores.get('ultrasonido', 'UNKNOWN')
-        estado_mq2 = sensores.get('mq2', 'UNKNOWN')
-        estado_mic = sensores.get('mic_inmp441', 'UNKNOWN')
-        
-        df_s = pd.DataFrame([
-            {"Sensor": "DHT11 (Clima)", "Estado": estado_dht},
-            {"Sensor": "HC-SR04 (Distancia)", "Estado": estado_ultra},
-            {"Sensor": "MQ-2 (Gas)", "Estado": estado_mq2},
-            {"Sensor": "INMP441 (Audio IA)", "Estado": estado_mic},
-        ])
-        
-        # Estilizar tabla simple
-        st.dataframe(df_s, hide_index=True, use_container_width=True)
-        
-        st.markdown("#### 🤖 Diagnóstico IA")
-        if prediccion['es_anomalia']:
-            st.error(f"Anomalía detectada ({prediccion['confianza']}%)")
-        else:
-            st.success("Patrones normales")
+        # v6 envía diccionarios dentro de estado_sensores o strings simples. Manejamos ambos.
+        def get_status(key, name):
+            if isinstance(sensores_dict, dict):
+                val = sensores_dict.get(key, 'N/A')
+                # Si es diccionario (v6 complejo)
+                if isinstance(val, dict):
+                    return "✅ ONLINE" if val.get('conectado', False) else "❌ ERROR"
+                # Si es string (v6 simple)
+                return val
+            return "N/A"
 
-    # 7. Gráficos Históricos
+        data_s = [
+            {"Sensor": "DHT11 (Clima)", "Estado": get_status('DHT11', 'dht11')},
+            {"Sensor": "HC-SR04 (Distancia)", "Estado": get_status('Ultrasonido', 'ultrasonido')},
+            {"Sensor": "MQ-2 (Gas)", "Estado": get_status('Gas', 'mq2')},
+            {"Sensor": "Micrófono (IA)", "Estado": get_status('Microfono', 'mic_inmp441')},
+        ]
+        st.dataframe(pd.DataFrame(data_s), hide_index=True, use_container_width=True)
+        
+        if prediccion['es_anomalia']:
+            st.warning(f"🤖 IA: {prediccion['mensaje']}")
+        else:
+            st.success(f"🤖 IA: {prediccion['mensaje']}")
+
+    # 8. Gráficos
     with graficos.container():
-        if len(estado_compartido.hist_temp) > 2:
+        if len(estado_compartido.hist_temp) > 0:
             df_hist = pd.DataFrame({
-                "Temp (°C)": list(estado_compartido.hist_temp),
-                "Humedad (%)": list(estado_compartido.hist_hum),
-                "Gas (Dig)": list(estado_compartido.hist_gas)
+                "Temp": list(estado_compartido.hist_temp),
+                "Hum": list(estado_compartido.hist_hum),
+                "Gas": list(estado_compartido.hist_gas)
             })
-            st.line_chart(df_hist, height=250)
+            st.line_chart(df_hist, height=220)
 
 else:
     # OFFLINE
-    estado_con.error(f"🔴 **OFFLINE** | Última vez hace: {int(tiempo_transcurrido)}s")
-    info_hw.warning("Esperando conexión con Raspberry Pi...")
-    alert_banner.info("⏳ Sistema en espera de datos...")
+    estado_con.error(f"🔴 **OFFLINE** | Conexión perdida hace {int(tiempo_transcurrido)}s")
+    info_hw.warning("Esperando datos de Raspberry Pi...")
+    alert_banner.info("⏳ Esperando conexión...")
 
 # ==========================================
-# 🎤 SECCIÓN DE AUDIO (COMPARTIDA)
+# 🎤 SECCIÓN DE AUDIO (SINCRONIZADA)
 # ==========================================
-with audio_live_cont.container():
+with col_audio_live:
     st.markdown("#### 🎧 Audio en Vivo")
-    if st.session_state.escuchando:
-        monitor_data = estado_compartido.ultimo_audio_monitor
-        if monitor_data:
-            ts_audio = datetime.fromtimestamp(monitor_data['timestamp']).strftime('%H:%M:%S')
-            st.caption(f"🔊 Recibido a las {ts_audio}")
-            audio_bytes = base64.b64decode(monitor_data['audio'])
-            st.audio(audio_bytes, format='audio/wav', autoplay=True)
+    if st.session_state.mic_activo:
+        audio_data = estado_compartido.ultimo_audio_monitor
+        if audio_data:
+            ts = datetime.fromtimestamp(audio_data['timestamp']).strftime('%H:%M:%S')
+            st.caption(f"📡 Recibido: {ts}")
+            # Usamos key única para forzar recarga del reproductor
+            st.audio(base64.b64decode(audio_data['audio']), format='audio/wav', autoplay=True)
         else:
-            st.warning("⏳ Esperando flujo de audio...")
+            st.warning("⏳ Buffering...")
     else:
-        st.info("🔇 Transmisión desactivada")
+        st.info("🔇 Micrófono apagado")
 
-with audio_alert_cont.container():
-    st.markdown("#### 🚨 Últimos Disparos Detectados")
+with col_audio_alertas:
+    st.markdown("#### 🚨 Última Alerta")
     if estado_compartido.alertas_disparo:
-        # Mostrar solo la más reciente expandida
-        alerta = estado_compartido.alertas_disparo[0]
-        ts_alerta = datetime.fromtimestamp(alerta['timestamp']).strftime('%H:%M:%S')
-        st.error(f"🔫 DISPARO - {ts_alerta}")
-        st.metric("Probabilidad IA", f"{alerta['probabilidad']*100:.1f}%")
+        last_alert = estado_compartido.alertas_disparo[0]
+        ts_alert = datetime.fromtimestamp(last_alert['timestamp']).strftime('%H:%M:%S')
         
-        audio_alerta = base64.b64decode(alerta['audio'])
-        st.audio(audio_alerta, format='audio/wav')
-        
-        if len(estado_compartido.alertas_disparo) > 1:
-            st.caption(f"Historial: {len(estado_compartido.alertas_disparo)} eventos guardados")
+        st.error(f"🔫 DISPARO - {ts_alert}")
+        st.metric("Confianza IA", f"{last_alert['probabilidad']*100:.1f}%")
+        st.audio(base64.b64decode(last_alert['audio']), format='audio/wav')
     else:
-        st.success("✅ Sin incidentes de disparos")
+        st.success("✅ Sin incidentes")
 
-# Recarga automática para efecto "Tiempo Real"
+# Refresco automático (1s)
 time.sleep(1)
 st.rerun()
