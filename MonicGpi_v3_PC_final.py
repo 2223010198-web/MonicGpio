@@ -339,7 +339,7 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     # ==========================================
     # 📊 HEADER
     # ==========================================
-    st.title("🌲 Monitor Forestal Pro")
+    st.title("🌲 MonicGpi")
     st.caption("Sistema Inteligente de Vigilancia Ambiental y Seguridad")
     
     hw = data.get('hardware', {})
@@ -723,3 +723,4 @@ else:
 time.sleep(1)
 st.rerun()
     
+
