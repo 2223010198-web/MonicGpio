@@ -24,7 +24,7 @@ warnings.filterwarnings('ignore')
 # ⚙️ CONFIGURACIÓN DE PÁGINA
 # ==========================================
 st.set_page_config(
-    page_title="Monitor Forestal Pro",
+    page_title="MonicGpi",
     page_icon="🌲",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -364,7 +364,87 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     riesgo = analizar_riesgo(t, g, h, d, prediccion, mov)
     estado_compartido.hist_riesgo.append(riesgo['score'])
     
+
+    
     # ==========================================
+    # 📊 MÉTRICAS PRINCIPALES
+    # ==========================================
+    st.subheader("📊 Métricas Ambientales")
+
+    # Primera fila: 5 columnas
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        delta_t = "🔥 CRÍTICO" if t > 35 else ("⚠️ Alto" if t > 30 else "✅ Normal")
+        col1.metric(
+            label="🌡️ TEMPERATURA",
+            value=f"{t}°C",
+            delta=delta_t,
+            delta_color="inverse" if t > 35 else ("off" if t > 30 else "normal")
+        )
+
+    with col2:
+        delta_h = "⚠️ Muy Seco" if h < 20 else ("💧 Bajo" if h < 40 else "✅ Óptimo")
+        col2.metric(
+            label="💧 HUMEDAD",
+            value=f"{h}%",
+            delta=delta_h,
+            delta_color="inverse" if h < 20 else ("off" if h < 40 else "normal")
+        )
+
+    with col3:
+        gas_status = "DETECTADO" if g == 0 else "Normal"
+        delta_g = "🔥 ALERTA" if g == 0 else "✅ Despejado"
+        col3.metric(
+            label="♨️ GAS/HUMO",
+            value=gas_status,
+            delta=delta_g,
+            delta_color="inverse" if g == 0 else "normal"
+        )
+
+    with col4:
+        dist_status = f"{d} cm" if d > 0 else "Sin obj."
+        delta_d = "🚨 CRÍTICO" if 0 < d < 50 else ("👁️ Cerca" if 50 <= d < 100 else "✅ Lejano")
+        col4.metric(
+            label="📏 DISTANCIA",
+            value=dist_status,
+            delta=delta_d,
+            delta_color="inverse" if 0 < d < 50 else ("off" if 50 <= d < 100 else "normal")
+        )
+
+    with col5:
+        delta_u = "🚨 MÁXIMA ALERTA" if umbral <= 0.25 else "🛡️ VIGILANCIA"
+        col5.metric(
+            label="🎚️ UMBRAL AUDIO IA",
+            value=f"{umbral:.2f}",
+            delta=delta_u,
+            delta_color="inverse" if umbral <= 0.25 else "normal"
+        )
+
+    # Segunda fila: 2 métricas centradas con columnas espaciadoras
+    _ ,_, col6, col7, _ = st.columns([1, 1, 2, 2, 1])
+
+    with col6:
+        col6.metric(
+            label="⚡ ÍNDICE DE RIESGO",
+            value=f"{riesgo['score']}/100",
+            delta=f"{riesgo['icono']} {riesgo['nivel']}",
+            delta_color="inverse" if riesgo['score'] >= 60 else ("off" if riesgo['score'] >= 30 else "normal")
+        )
+
+    with col7:
+        mov_status = "DETECTADO" if mov else "Sin actividad"
+        delta_m = "⚡ ACTIVO" if mov else "✅ TRANQUILO"
+        col7.metric(
+            label="🎯 MOVIMIENTO",
+            value=mov_status,
+            delta=delta_m,
+            delta_color="off" if mov else "normal"
+        )
+
+    st.divider()
+
+        # ==========================================
     # 🚨 SISTEMA DE ALERTAS CRÍTICAS
     # ==========================================
     
@@ -384,22 +464,36 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
         last_shot = estado_compartido.alertas_disparo[0]
         ts_shot = datetime.fromtimestamp(last_shot['timestamp']).strftime('%H:%M:%S')
         st.error(f"""
-        ### 🔫 DISPARO DETECTADO
+        ### DISPARO DETECTADO
         
         **Hora:** {ts_shot} | **Confianza IA:** {last_shot['probabilidad']*100:.1f}%
         
         ⚠️ Posible actividad de caza furtiva en la zona
-        """, icon="🔫")
+        """, icon="🔥")
         st.audio(base64.b64decode(last_shot['audio']), format='audio/wav')
     
     # Alerta de Proximidad Crítica
+    if 'tiempo_alerta_proximidad' not in st.session_state:
+        st.session_state.tiempo_alerta_proximidad = 0
+
+    # 2. Si detecta algo AHORA, actualizamos el temporizador al momento actual
     if 0 < d < 50:
+        st.session_state.tiempo_alerta_proximidad = time.time()
+
+    # 3. Mostrar la alerta si han pasado menos de 60 segundos desde la última detección
+    tiempo_transcurrido_alerta = time.time() - st.session_state.tiempo_alerta_proximidad
+    
+    if tiempo_transcurrido_alerta < 60:
+        tiempo_restante = int(60 - tiempo_transcurrido_alerta)
+        
         st.warning(f"""
         ### 🚶 PROXIMIDAD CRÍTICA DETECTADA
         
-        Objeto/Persona a **{d} cm** del sensor ultrasónico
+        Se detectó un objeto/persona a **{d if 0 < d < 50 else 'menos de 50'} cm**.
         
-        Posible intruso o cazador furtivo en el área protegida
+        ⚠️ **Alerta activa por: {tiempo_restante}s**
+        
+        Posible intruso o cazador furtivo en el área protegida.
         """, icon="⚠️")
     
     # Advertencia General
@@ -411,84 +505,7 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
         """, icon="⚠️")
     
     st.divider()
-    
-    # ==========================================
-    # 📊 MÉTRICAS PRINCIPALES
-    # ==========================================
-    st.subheader("📊 Métricas Ambientales")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        delta_t = "🔥 CRÍTICO" if t > 35 else ("⚠️ Alto" if t > 30 else "✅ Normal")
-        col1.metric(
-            label="🌡️ TEMPERATURA",
-            value=f"{t}°C",
-            delta=delta_t,
-            delta_color="inverse" if t > 35 else ("off" if t > 30 else "normal")
-        )
-    
-    with col2:
-        delta_h = "⚠️ Muy Seco" if h < 20 else ("💧 Bajo" if h < 40 else "✅ Óptimo")
-        col2.metric(
-            label="💧 HUMEDAD",
-            value=f"{h}%",
-            delta=delta_h,
-            delta_color="inverse" if h < 20 else ("off" if h < 40 else "normal")
-        )
-    
-    with col3:
-        gas_status = "DETECTADO" if g == 0 else "Normal"
-        delta_g = "🔥 ALERTA" if g == 0 else "✅ Despejado"
-        col3.metric(
-            label="♨️ GAS/HUMO",
-            value=gas_status,
-            delta=delta_g,
-            delta_color="inverse" if g == 0 else "normal"
-        )
-    
-    with col4:
-        dist_status = f"{d} cm" if d > 0 else "Sin obj."
-        delta_d = "🚨 CRÍTICO" if 0 < d < 50 else ("👁️ Cerca" if 50 <= d < 100 else "✅ Lejano")
-        col4.metric(
-            label="📏 DISTANCIA",
-            value=dist_status,
-            delta=delta_d,
-            delta_color="inverse" if 0 < d < 50 else ("off" if 50 <= d < 100 else "normal")
-        )
-    
-    # Métricas Secundarias
-    col5, col6, col7 = st.columns(3)
-    
-    with col5:
-        delta_u = "🚨 MÁXIMA ALERTA" if umbral <= 0.25 else "🛡️ VIGILANCIA"
-        col5.metric(
-            label="🎚️ UMBRAL AUDIO IA",
-            value=f"{umbral:.2f}",
-            delta=delta_u,
-            delta_color="inverse" if umbral <= 0.25 else "normal"
-        )
-    
-    with col6:
-        col6.metric(
-            label="⚡ ÍNDICE DE RIESGO",
-            value=f"{riesgo['score']}/100",
-            delta=f"{riesgo['icono']} {riesgo['nivel']}",
-            delta_color="inverse" if riesgo['score'] >= 60 else ("off" if riesgo['score'] >= 30 else "normal")
-        )
-    
-    with col7:
-        mov_status = "DETECTADO" if mov else "Sin actividad"
-        delta_m = "⚡ ACTIVO" if mov else "✅ TRANQUILO"
-        col7.metric(
-            label="🎯 MOVIMIENTO",
-            value=mov_status,
-            delta=delta_m,
-            delta_color="off" if mov else "normal"
-        )
-    
-    st.divider()
-    
+        
     # ==========================================
     # 📡 ESTADO DE SENSORES
     # ==========================================
@@ -498,7 +515,7 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     sensores_info = [
         ("🌡️ Sensor Climático", "DHT11 Digital", sensores.get('dht11', 'OFFLINE')),
         ("📏 Sensor de Proximidad", "HC-SR04 Ultrasónico", sensores.get('ultrasonido', 'OFFLINE')),
-        ("♨️ Detector Gas/Humo", "MQ-2 Analógico", sensores.get('mq2', 'OFFLINE')),
+        ("♨️ Detector Gas/Humo", "MQ-2 Digital", sensores.get('mq2', 'OFFLINE')),
         ("🎤 Micrófono Táctico", "INMP441 I2S Digital", sensores.get('mic_inmp441', 'OFFLINE'))
     ]
     
@@ -537,7 +554,8 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
                 "Temperatura (°C)": list(estado_compartido.hist_temp),
                 "Humedad (%)": list(estado_compartido.hist_hum)
             })
-            st.area_chart(df_clima, height=250, color=["#f97316", "#06b6d4"])
+            # Se cambió area_chart por line_chart para ver las líneas separadas
+            st.line_chart(df_clima, height=250, color=["#f97316", "#06b6d4"])
         else:
             st.info("Recopilando datos...")
     
