@@ -308,11 +308,6 @@ with st.sidebar:
             # NO envío "OFF" para no cortarle el audio a otros usuarios.
             st.toast("Audio silenciado localmente", icon="🔇")
             
-    # 2. Botón Global: Para detener la RPi si nadie más escucha
-    st.markdown("---")
-    if st.button("🛑 DETENER TRANSMISIÓN GLOBAL", help="Corta el flujo de datos de la Raspberry Pi para TODOS los usuarios"):
-        cliente_mqtt.publish(TOPIC_COMANDOS, "OFF")
-        st.warning("Se ha enviado la orden de silencio a la Raspberry Pi.")
 
 # ==========================================
 # 🔄 PROCESAMIENTO Y VISUALIZACIÓN
@@ -442,3 +437,4 @@ else:
 # Refresco
 time.sleep(1)
 st.rerun()
+
