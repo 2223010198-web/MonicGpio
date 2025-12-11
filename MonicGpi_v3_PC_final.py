@@ -17,6 +17,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import warnings
 import base64
+from datetime import timedelta
 
 warnings.filterwarnings('ignore')
 
@@ -339,7 +340,7 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
     # ==========================================
     # 📊 HEADER
     # ==========================================
-    st.title("🌲 MonicGpi")
+    st.title("🌲 Monitor Forestal Pro")
     st.caption("Sistema Inteligente de Vigilancia Ambiental y Seguridad")
     
     hw = data.get('hardware', {})
@@ -459,18 +460,50 @@ if data and tiempo_transcurrido < TIEMPO_LIMITE_DESCONEXION:
         {chr(10).join('- ' + f for f in riesgo['factores'])}
         """, icon="🚨")
     
-    # Alerta de Disparo
+    # ==========================================
+    # 🚨 Alerta de Disparo (Con cierre y Hora Perú)
+    # ==========================================
     if estado_compartido.alertas_disparo:
         last_shot = estado_compartido.alertas_disparo[0]
-        ts_shot = datetime.fromtimestamp(last_shot['timestamp']).strftime('%H:%M:%S')
-        st.error(f"""
-        ### DISPARO DETECTADO
-        
-        **Hora:** {ts_shot} | **Confianza IA:** {last_shot['probabilidad']*100:.1f}%
-        
-        ⚠️ Posible actividad de caza furtiva en la zona
-        """, icon="🔥")
-        st.audio(base64.b64decode(last_shot['audio']), format='audio/wav')
+        shot_id = last_shot['timestamp']  # Usamos el timestamp como ID único del evento
+
+        # 1. Inicializar lista de alertas cerradas en memoria
+        if 'alertas_cerradas' not in st.session_state:
+            st.session_state.alertas_cerradas = set()
+
+        # 2. Verificar si esta alerta específica NO ha sido cerrada
+        if shot_id not in st.session_state.alertas_cerradas:
+            
+            # 3. Cálculo de Hora Perú (UTC - 5 horas)
+            # Convertimos el timestamp a objeto fecha y restamos 5 horas
+            dt_utc = datetime.utcfromtimestamp(shot_id)
+            dt_peru = dt_utc - timedelta(hours=5)
+            ts_shot = dt_peru.strftime('%d/%m/%Y %H:%M:%S')
+
+            # 4. Diseño con columnas para poner la "X" a la derecha
+            # La columna [0.92, 0.08] deja un espacio pequeño a la derecha para el botón
+            col_alerta, col_cerrar = st.columns([0.92, 0.08])
+
+            with col_alerta:
+                st.error(f"""
+                ### 🔫 DISPARO DETECTADO
+                
+                **📍 Hora Perú:** {ts_shot}
+                
+                **🤖 Confianza IA:** {last_shot['probabilidad']*100:.1f}%
+                
+                ⚠️ **ALERTA CRÍTICA:** Posible actividad de caza furtiva detectada.
+                """, icon="🔥")
+                
+                # El audio se mantiene dentro de la alerta
+                st.audio(base64.b64decode(last_shot['audio']), format='audio/wav')
+
+            with col_cerrar:
+                # Botón de cerrar (X)
+                # Usamos un key único basado en el timestamp para que no choque con otros botones
+                if st.button("✖", key=f"close_{shot_id}", help="Cerrar esta alerta"):
+                    st.session_state.alertas_cerradas.add(shot_id)
+                    st.rerun() # Recargar página para ocultar la alerta
     
     # Alerta de Proximidad Crítica
     if 'tiempo_alerta_proximidad' not in st.session_state:
@@ -723,4 +756,3 @@ else:
 time.sleep(1)
 st.rerun()
     
-
